@@ -1,20 +1,46 @@
-import React from 'react';
-import Style from '../../style/search.module.scss';
+import React, { useState } from 'react';
+import Style from '../../style/search.module.css';
 import Jdenticon from 'react-jdenticon';
-
+import { ColorExtractor } from 'react-color-extractor';
 const TrackCard = (props) => {
+  console.log(props.data);
+  const [colors, setCololrs] = useState([]);
+  if (colors !== []) {
+    console.log(`colors: ${colors}`);
+  }
+  // className={[
+  //   Style.search__results__item__track,
+  //   colors.lengths > 2
+  //     ? {
+  //         backgroundColor: colors[0],
+  //       }
+  //     : null,
+  // ].join(" ")}
+
   return (
-    <div className={Style.search__results__item__track}>
+    <div
+      style={{
+        backgroundColor: colors.length > 2 ? colors[5] : '#19191d',
+        width: '250px',
+        height: '400px',
+        position: 'relative',
+        marginLeft: '30px',
+        marginBottom: '20px',
+        borderRadius: '5px',
+      }}
+    >
       <div className={Style.search__results__item__wrapper}>
         <ul>
           {props.data.album.images[1] ? (
             <li className={Style.search__results__img}>
-              <img
-                className={Style.search__results__img__self_tracks}
-                src={props.data.album.images[1].url}
-                alt=''
-                width={150}
-              />
+              <ColorExtractor getColors={(colors) => setCololrs(colors)}>
+                <img
+                  className={Style.search__results__img__self_tracks}
+                  src={props.data.album.images[1].url}
+                  alt=''
+                  width={150}
+                />
+              </ColorExtractor>
             </li>
           ) : (
             <li className={Style.search__results__img}>

@@ -1,46 +1,46 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
-import Style from '../../style/home.module.css';
+import React, { useState, useEffect } from "react";
+import Container from "react-bootstrap/Container";
+import Col from "react-bootstrap/Col";
+import Row from "react-bootstrap/Row";
+import Style from "../../style/home.module.css";
 const Home = () => {
   const allMoods = [
     {
-      moods: ['Hyped'],
+      moods: ["Hyped"],
+      artist: ["Travis Scott", "Shabjdeed", "Lil Uzi Vert", "Kanye West"],
+    },
+    {
+      moods: ["Sad", "Depressed"],
+      artist: ["XXXTentacion", "Frank Ocean", "NF", "Joji", "Mac DeMarco"],
+    },
+    {
+      moods: ["Calm"],
       artist: [
-        'Travis Scott',
-        'Shabjdeed',
-        'Lil Uzi Vert',
-        'Don Toliver',
-        'DaBaby',
+        "Post Malone",
+        "Bad Bunny",
+        "Don Toliver",
+        "TV Girl",
+        "The Weeknd",
       ],
     },
     {
-      moods: ['Sad', 'Depressed'],
-      artist: ['XXXTentacion', 'Juice WRLD', 'NF'],
+      moods: ["Romantic"],
+      artist: ["Lil Tjay", "Frank Ocean", "Ariana Grande", "YNW Melly"],
     },
     {
-      moods: ['Calm'],
+      moods: ["Loney"],
+      artist: ["NF", "XXXTentaction", "Juice WRLD", "Joji"],
+    },
+    {
+      moods: ["Fearful"],
       artist: [
-        'Post Malone',
-        'Bad Bunny',
-        'Don Toliver',
-        'Boogie wit da hoodie',
-        'The Weeknd',
+        "Lucii",
+        "Central Cee",
+        "J. Cole",
+        "Kanye West",
+        "Kendrick Lamar",
       ],
-    },
-    {
-      moods: ['Romantic'],
-      artist: ['Lil Tjay', 'Juice WRLD', 'Ariana Grande', 'YNW Melly'],
-    },
-    {
-      moods: ['Loney'],
-      artist: ['NF', 'XXXTentaction', 'Juice WRLD'],
-    },
-    {
-      moods: ['Fearful'],
-      artist: ['Lucii'],
     },
   ];
 
@@ -69,21 +69,21 @@ const Home = () => {
               We provide you with data about your favorite artist.
             </p>
           </Col>
-          <Col md={4} sm={12} className='part2'>
+          <Col md={4} sm={12} className="part2">
             <div className={Style.card}>
               <h1 className={Style.title}>
-                Feeling{' '}
+                Feeling{" "}
                 {allMoods[mood] &&
                   allMoods[mood].moods.map((rnmood) => (
                     <span>
                       {rnmood}
-                      {''}
+                      {""}
                       {allMoods[mood].moods.length ===
                       allMoods[mood].moods.indexOf(rnmood) + 1
                         ? null
-                        : ', '}
+                        : ", "}
                     </span>
-                  ))}{' '}
+                  ))}{" "}
                 ?
               </h1>
               <div className={Style.artist}>

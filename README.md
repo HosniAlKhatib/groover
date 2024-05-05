@@ -34,16 +34,9 @@
 - [ ] Add dynamic page for each artist.
 - [ ] Add Search History - 60% by Hosny.
 - [ ] Filter search results.
-- [ ] Grinder
+- [ ] The swipe thing
 
 ## Bugs to fix:
 
 - [ ] show default profile page and then show user's data.
 
-## 🤝 Contributing
-
-Contributions, issues and feature requests are welcome!<br />Feel free to check [issues page](https://github.com/AhmadHerzallah/groover/issues). You can also take a look at the [contributing guide](https://github.com/AhmadHerzallah/groover/blob/master/CONTRIBUTING.md).
-
-## Show your support
-
-Give a ⭐️ if this project helped you!

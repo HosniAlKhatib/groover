@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/jsx-no-target-blank */
 import React, { useEffect, useState } from 'react';
-import Style from '../../style/search.module.scss';
+import Style from '../../style/search.module.css';
 import Form from 'react-bootstrap/Form';
 import Switch from 'react-switch';
 import Col from 'react-bootstrap/Col';
@@ -29,11 +29,10 @@ const Search = () => {
   };
 
   const token =
-    'BQCf_TxIUAwzXIP5axVziHiwfQpkd_WF4bifpr2W9WtjK7TxqIIPiItMcvlcVYZhajk750ML3WeMF6jjm4JB71lE8t2Yxbilyjd9iJlV2gkt7n1U-3Q1pF6HlpaGyaclzmVmYbPP91wDI9qopq4of_CBs0RxQvTfL9R-VR3CCAl4bPqbQA';
-
+    'BQC71mgEndqmA_HV6OTABtPUv1mZ7lLsD0lNDJPi0C5HKAO5Ho5m5ufN25GPgmFC1QoAl5sJwAJ-8MJ_YW22ZaFIMbJkKA5nS7ajrXvskCzlOVne9aVRnSz2jO6RTyPMmHUNvwVSwgTxHUzZ64uDNJhwf2xwC_Cz4gv9D8ZkNMK8LeNhF_InKTZkzA0OXIrvVTzA9QUAlM-nSPF_ww';
   const getDataArtist = async () => {
     const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${query}&type=artist&limit=10&access_token=${token}`,
+      `https://api.spotify.com/v1/search?q=${query}&type=artist&limit=10&access_token=${token}`
     );
     const data = await res.json();
     // console.log('searching..');
@@ -42,7 +41,7 @@ const Search = () => {
 
   const getDataTrack = async () => {
     const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${query}&type=track&limit=10&access_token=${token}`,
+      `https://api.spotify.com/v1/search?q=${query}&type=track&limit=10&access_token=${token}`
     );
     const data = await res.json();
     // console.log('searching..');
@@ -87,6 +86,7 @@ const Search = () => {
 
   const handleValueChange = (e) => {
     setQuery(e.target.value);
+
     // console.log(query);
   };
   // let history = [];
