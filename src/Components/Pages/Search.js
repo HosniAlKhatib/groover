@@ -12,40 +12,78 @@ import Jdenticon from 'react-jdenticon';
 // Imports
 import ArtistCard from '../SearchCards/ArtistCard';
 import TrackCard from '../SearchCards/TrackCard';
+import refreshToken from '../TokenRefresh';
 
 const Search = () => {
   //#region
   const [switcher, setSwitcher] = useState(true);
-  const [query, setQuery] = useState('JuiceWRLD');
+  const [query, setQuery] = useState('');
   const [flag, setFlag] = useState(false);
   const [artistData, setArtistData] = useState({});
   const [trackData, setTrackData] = useState({});
+  const [token, setToken] = useState('');
+
   useEffect(() => {
     switcher ? getDataArtist() : getDataTrack();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flag]);
   const handleSwitchChange = () => {
     setSwitcher(!switcher);
   };
 
-  const token =
-    'BQC71mgEndqmA_HV6OTABtPUv1mZ7lLsD0lNDJPi0C5HKAO5Ho5m5ufN25GPgmFC1QoAl5sJwAJ-8MJ_YW22ZaFIMbJkKA5nS7ajrXvskCzlOVne9aVRnSz2jO6RTyPMmHUNvwVSwgTxHUzZ64uDNJhwf2xwC_Cz4gv9D8ZkNMK8LeNhF_InKTZkzA0OXIrvVTzA9QUAlM-nSPF_ww';
+  useEffect(() => {
+    const refresh = () => {
+      refreshToken()
+        .then((accessToken) => {
+          setToken(accessToken);
+          console.log('refreshed token', refreshToken);
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+        });
+    };
+    refresh();
+    setInterval(() => {
+      refresh();
+      console.log('An Hour Passed, A New Token To Use.');
+    }, 3600000);
+  }, []);
+
+  // New token command line
+
+  // curl -X POST \
+  // -d grant_type=refresh_token \
+  // -d refresh_token=AQAEcKmTQJUVctWqAtYliRf_EixdRQAgN2dGP3T1wvRBnn7N5TtRYTrpEhF-mm-U4CSPnmZ0WToAZyNUoX4URi_3H8mT_XA1JTh4TGBZC25BtlRP8hCQFYsRts2Pym2rSUc \
+  // -d client_id=fdf4ebde87024efd9eca75e74263f7e6 \
+  // -d client_secret=affdc690e60c448d92b054592916b24e \
+  // https://accounts.spotify.com/api/token
+
   const getDataArtist = async () => {
-    const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${query}&type=artist&limit=10&access_token=${token}`
-    );
-    const data = await res.json();
-    // console.log('searching..');
-    setArtistData(data);
+    try {
+      const res = await fetch(
+        `https://api.spotify.com/v1/search?q=${query}&type=artist&limit=10&access_token=${token}`
+      );
+
+      const data = await res.json();
+      // console.log('searching..');
+      setArtistData(data);
+    } catch (error) {
+      console.error('Error fetching artist data:', error);
+    }
   };
 
   const getDataTrack = async () => {
-    const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${query}&type=track&limit=10&access_token=${token}`
-    );
-    const data = await res.json();
-    // console.log('searching..');
-    setTrackData(data);
+    try {
+      const res = await fetch(
+        `https://api.spotify.com/v1/search?q=${query}&type=track&limit=10&access_token=${token}`
+      );
+      const data = await res.json();
+      // console.log('searching..');
+      setTrackData(data);
+    } catch (error) {
+      console.error('Error fetching track data:', error);
+    }
   };
   let artistlist = [];
   let tracklist = [];

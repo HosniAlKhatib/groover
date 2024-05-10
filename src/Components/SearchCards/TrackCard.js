@@ -3,10 +3,10 @@ import Style from '../../style/search.module.css';
 import Jdenticon from 'react-jdenticon';
 import { ColorExtractor } from 'react-color-extractor';
 const TrackCard = (props) => {
-  console.log(props.data);
+  // console.log(props.data);
   const [colors, setCololrs] = useState([]);
   if (colors !== []) {
-    console.log(`colors: ${colors}`);
+    // console.log(`colors: ${colors}`);
   }
   // className={[
   //   Style.search__results__item__track,
