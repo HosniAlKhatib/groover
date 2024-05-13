@@ -61,11 +61,13 @@ const Search = () => {
 
   const getDataArtist = async () => {
     try {
+      const Artist = encodeURIComponent(query);
       const res = await fetch(
-        `https://api.spotify.com/v1/search?q=${query}&type=artist&limit=10&access_token=${token}`
+        `https://api.spotify.com/v1/search?q=artist:${Artist}&type=artist&limit=10&access_token=${token}`
       );
 
       const data = await res.json();
+      console.log(data);
       // console.log('searching..');
       setArtistData(data);
     } catch (error) {
@@ -75,12 +77,15 @@ const Search = () => {
 
   const getDataTrack = async () => {
     try {
-      const res = await fetch(
-        `https://api.spotify.com/v1/search?q=${query}&type=track&limit=10&access_token=${token}`
+      const TrackRes = await fetch(
+        `https://api.spotify.com/v1/search?q=:${query}&type=track&limit=10&access_token=${token}`
       );
-      const data = await res.json();
-      // console.log('searching..');
+      const data = await TrackRes.json();
+      if (data.tracks && data.tracks.items) {
+        data.tracks.items.sort((a, b) => b.popularity - a.popularity);
+      }
       setTrackData(data);
+      console.log(data);
     } catch (error) {
       console.error('Error fetching track data:', error);
     }
@@ -229,7 +234,11 @@ const Search = () => {
           ) : (
             <>
               {trackData.tracks &&
-                trackData.tracks.items.map((res) => <TrackCard data={res} />)}
+                trackData.tracks.items.map((track, index) => (
+                  <div key={index}>
+                    <TrackCard data={track} />
+                  </div>
+                ))}
               {/* {console.log(trackData)} */}
             </>
           )}
