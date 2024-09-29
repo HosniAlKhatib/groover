@@ -1,42 +1,33 @@
 import React, { useState } from 'react';
 import Style from '../../style/search.module.css';
+import Track_Style from '../../style/search/track.module.css';
 import Jdenticon from 'react-jdenticon';
 import { ColorExtractor } from 'react-color-extractor';
-const TrackCard = (props) => {
-  // console.log(props.data);
-  const [colors, setCololrs] = useState([]);
-  if (colors !== []) {
-    // console.log(`colors: ${colors}`);
-  }
-  // className={[
-  //   Style.search__results__item__track,
-  //   colors.lengths > 2
-  //     ? {
-  //         backgroundColor: colors[0],
-  //       }
-  //     : null,
-  // ].join(" ")}
 
+const TrackCard = (props) => {
+  const { track } = props;
+  const [colors, setCololrs] = useState([]);
   return (
     <div
       style={{
         backgroundColor: colors.length > 2 ? colors[5] : '#19191d',
-        width: '250px',
+        width: '300px',
         height: '400px',
         position: 'relative',
-        marginLeft: '30px',
-        marginBottom: '20px',
+        marginLeft: '35px',
+        marginBottom: '30px',
         borderRadius: '5px',
       }}
     >
+      <script src='https://sdk.scdn.co/spotify-player.js'></script>
       <div className={Style.search__results__item__wrapper}>
         <ul>
-          {props.data.album.images[1] ? (
+          {track.album.images[1] ? (
             <li className={Style.search__results__img}>
               <ColorExtractor getColors={(colors) => setCololrs(colors)}>
                 <img
                   className={Style.search__results__img__self_tracks}
-                  src={props.data.album.images[1].url}
+                  src={track.album.images[1].url}
                   alt=''
                   width={150}
                 />
@@ -44,28 +35,35 @@ const TrackCard = (props) => {
             </li>
           ) : (
             <li className={Style.search__results__img}>
-              <Jdenticon size='140' value={props.data.name} />
+              <Jdenticon size='140' value={track.name} />
             </li>
           )}
-          <li className={Style.search__results__name}>{props.data.name}</li>
-          <li className={Style.search__results__artists}>
-            {props.data.artists.map((elem) => (
-              <span>
+          <li
+            className={`${Style.search__results__name} ${Track_Style.search__results__elements}`}
+          >
+            {track.name}
+          </li>
+          <li
+            className={`${Style.search__results__name} ${Track_Style.search__results__elements}`}
+          >
+            {track.artists.map((elem, index) => (
+              <span key={index}>
                 {elem.name}{' '}
-                {props.data.artists.length ===
-                props.data.artists.indexOf(elem) + 1
+                {track.artists.length === track.artists.indexOf(elem) + 1
                   ? null
                   : ', '}
               </span>
             ))}
           </li>
-          <li className={Style.search__results__spotify__player}>
-            {/* {console.log(props.data.uri.split(':'))} */}
+          <li
+            className={Style.search__results__spotify__player}
+            // onClick={() => <MySpotifyComponent token={token} />}
+          >
             <iframe
-              src={`https://open.spotify.com/embed/${
-                props.data.uri.split(':')[1]
-              }/${props.data.uri.split(':')[2]}`}
-              width='240'
+              src={`https://open.spotify.com/embed/${track.uri.split(':')[1]}/${
+                track.uri.split(':')[2]
+              }`}
+              width='280'
               title='Spotify'
               height='80'
               style={{ borderRadius: '5px' }}

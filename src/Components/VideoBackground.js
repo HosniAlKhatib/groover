@@ -1,15 +1,20 @@
-import React from "react";
+import React from 'react';
+import { useTheme } from 'styled-components';
 
 const VideoBackground = ({ video }) => {
+  const theme = useTheme();
+
   return (
-    <div className="fullscreen-bg">
+    <div className='fullscreen_bg'>
       <iframe
+        className='fullscreen_bg__video'
         src={video}
-        frameBorder="0"
-        className="fullscreen-bg__video"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        style={{
+          filter: `brightness(${theme.body === '#16161a' ? '10%' : ''})`, // Apply filter based on theme
+        }}
+        allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
         allowFullScreen
-        title="bg"
+        title='bg'
       ></iframe>
     </div>
   );

@@ -1,340 +1,428 @@
-/* eslint-disable default-case */
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable array-callback-return */
-/* eslint-disable no-unused-vars */
-// eslint-disable-next-line no-unused-vars
-
-import React, { useState, useEffect, useRef } from "react";
-import { Container } from "react-bootstrap";
-import fire from "../../fire";
-import Style from "../../style/profile.module.css";
-import { useAuth } from "../Authentication/Auth";
-import { useHistory } from "react-router-dom";
-import Avatar, { genConfig, AvatarConfig } from "react-nice-avatar";
-
-import firebase from "firebase";
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link,
-  Redirect,
-} from "react-router-dom";
-
-import Login from "./Login";
+import React, { useState, useEffect, useRef } from 'react';
+import { Container, Row, Col, Button, Form, ListGroup } from 'react-bootstrap';
+import Style from '../../style/profile.module.css';
+import { useAuth } from '../Authentication/Auth';
+import { useHistory } from 'react-router-dom';
+import Avatar, { genConfig } from 'react-nice-avatar';
+import firebase from 'firebase/app';
+import 'firebase/database';
+import 'firebase/storage';
+import ProfileNav from '../ProfileNav';
 
 const Profile = () => {
-  // Hooks
-  const { currentUser, loading, name, email, image, logOut } = useAuth();
+  const { currentUser, loading, name, email, logOut } = useAuth();
   const [avatarConfig, setAvatarConfig] = useState(null);
-  const [data, setData] = useState({});
-  const [phoroUrl, setPhotoUrl] = useState("");
-  const [uploadProgress, setUploadProgress] = useState(45);
-  const uploadedImage = useRef("");
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const uploadedImage = useRef(null);
   const history = useHistory();
-  let config = genConfig();
   const db = firebase.database();
-
-  // const [user, setUser] = useState(null);
-  let dataFromDatabase;
-
-  // Storage
-
-  /* Initialization*/
-  let storage = firebase.storage();
-
-  let storageRef = storage.ref();
+  const [artistsList, setArtistsList] = useState([]);
+  const [view, setView] = useState('favorites');
+  const [selectedArtists, setSelectedArtists] = useState({});
 
   const signOut = () => {
     logOut();
-    history.push("/");
+    history.push('/');
   };
 
-  React.useLayoutEffect(() => {
-    let config = randomAvatar(name);
+  useEffect(() => {
+    const config = randomAvatar(name);
     setAvatarConfig(config);
   }, [name]);
 
-  function randomAvatar(name) {
-    console.log(name);
-    const random = (items) => items[Math.floor(Math.random() * items.length)];
-    const calculatedSex = name === "Bob Smith" ? "man" : "woman";
-    const earSize = ["small", "big"];
-    const hairStyle = ["normal", "thick", "mohawk", "womanLong", "womanShort"];
-    const eyeStyle = ["circle", "oval", "smile"];
-    const glassesStyle = ["round", "square", "none"];
-    const noseStyle = ["short", "long", "round"];
-    const mouthStyle = ["laugh", "smile", "peace"];
-    const shirtStyle = ["hoody", "short", "polo"];
+  const randomAvatar = () => {
+    return genConfig();
+  };
 
-    let randomAvatarConfig = {
-      sex: calculatedSex,
-    };
-    return genConfig(randomAvatarConfig);
-  }
+  const greet = () => {
+    const hours = new Date().getHours();
+    return hours < 12 ? 'morning' : hours < 17 ? 'afternoon' : 'evening';
+  };
 
-  const hours = new Date().getHours();
-  let greet = null;
-  if (hours >= 12 && hours <= 17) {
-    greet = "afternoon";
-  } else if (hours >= 17) {
-    greet = "evening";
-  } else {
-    greet = "morning";
-  }
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPhotoUrl(url);
+      handleSubmit(file);
+    }
+  };
+
+  const handleSubmit = (file) => {
+    if (!file) return;
+
+    const metadata = { contentType: file.type };
+    const storageRef = firebase
+      .storage()
+      .ref()
+      .child(`images/${firebase.auth().currentUser.uid}/profile`);
+
+    const uploadTask = storageRef.put(file, metadata);
+
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+      },
+      (err) => {
+        console.error('Upload error: ', err);
+        setUploadProgress(0);
+      },
+      () => {
+        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
+          console.log('File available at:', url);
+          db.ref('users/' + currentUser.uid)
+            .update({ profilePicture: url })
+            .then(() => {
+              console.log('Profile picture updated successfully!');
+            })
+            .catch((error) => {
+              console.error(
+                'Error updating profile picture URL in database:',
+                error
+              );
+            });
+          setUploadProgress(0);
+        });
+      }
+    );
+  };
+
+  useEffect(() => {
+    if (currentUser) {
+      const userRef = db.ref('users/' + currentUser.uid);
+      userRef.once('value', (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          if (userData.profilePicture) {
+            setPhotoUrl(userData.profilePicture);
+          }
+        }
+      });
+    }
+  }, [currentUser, db]);
+
+  const getFavoriteArtists = async () => {
+    const userRef = db.ref(`users/${currentUser.uid}/favorites`);
+    const snapshot = await userRef.once('value');
+    if (snapshot.exists()) {
+      return Object.entries(snapshot.val()).map(([id, name]) => ({ id, name }));
+    }
+    return [];
+  };
+
+  const getBannedArtists = async () => {
+    const userRef = db.ref(`users/${currentUser.uid}/banned`);
+    const snapshot = await userRef.once('value');
+    if (snapshot.exists()) {
+      return Object.entries(snapshot.val()).map(([id, name]) => ({ id, name }));
+    }
+    return [];
+  };
+
+  const fetchArtists = async () => {
+    if (view === 'favorites') {
+      const favoriteArtists = await getFavoriteArtists();
+      setArtistsList(favoriteArtists);
+    } else if (view === 'banned') {
+      const bannedArtists = await getBannedArtists();
+      setArtistsList(bannedArtists);
+    }
+  };
+
+  useEffect(() => {
+    fetchArtists();
+  }, [view, currentUser]);
+
+  const handleNavClick = (type) => {
+    setView(type);
+  };
+
+  const handleCheckboxChange = (artistId) => {
+    setSelectedArtists((prevSelected) => ({
+      ...prevSelected,
+      [artistId]: !prevSelected[artistId],
+    }));
+  };
+
+  const handleStarAction = async (selected) => {
+    const updates = {};
+    selected.forEach((artistId) => {
+      updates[`/favorites/${artistId}`] = artistsList.find(
+        (artist) => artist.id === artistId
+      ).name;
+      updates[`/banned/${artistId}`] = null;
+    });
+    await db.ref(`users/${currentUser.uid}`).update(updates);
+    setSelectedArtists({}); // Reset selected artists
+    fetchArtists();
+  };
+
+  const handleXAction = async (selected) => {
+    const updates = {};
+    selected.forEach((artistId) => {
+      updates[`/banned/${artistId}`] = artistsList.find(
+        (artist) => artist.id === artistId
+      ).name;
+      updates[`/favorites/${artistId}`] = null;
+    });
+    await db.ref(`users/${currentUser.uid}`).update(updates);
+    setSelectedArtists({}); // Reset selected artists
+    fetchArtists();
+  };
+
+  const handleDeleteAction = async (selected) => {
+    const updates = {};
+    selected.forEach((artistId) => {
+      if (view === 'favorites') {
+        updates[`/favorites/${artistId}`] = null;
+      } else {
+        updates[`/banned/${artistId}`] = null;
+      }
+    });
+    await db.ref(`users/${currentUser.uid}`).update(updates);
+    setSelectedArtists({});
+    fetchArtists();
+  };
+
+  const deleteAccount = async () => {
+    const confirmation = window.confirm(
+      'Are you sure you want to delete your account? This action cannot be undone.'
+    );
+    if (confirmation) {
+      const input = window.prompt(
+        "Please enter the word 'Delete' to confirm account deletion (case-sensitive):"
+      );
+      if (input === 'Delete') {
+        try {
+          const user = firebase.auth().currentUser;
+          if (user) {
+            await db.ref(`users/${user.uid}`).remove();
+            await user.delete();
+            signOut();
+          } else {
+            alert('No user is currently signed in.');
+          }
+        } catch (error) {
+          console.error('Error deleting account:', error.message);
+          alert(
+            'An error occurred while trying to delete your account: ' +
+              error.message
+          );
+        }
+      } else {
+        alert(
+          "Account deletion cancelled. Please enter 'Delete' (case-sensitive) to proceed."
+        );
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Container>
         <h1>Loading...</h1>
       </Container>
     );
-  } else if (currentUser) {
-    return (
-      <Container>
-        {image ? (
-          <img
-            src={phoroUrl}
-            className={Style.profile__image}
-            alt={`${data && data.username}'s profile`}
-          />
-        ) : (
-          <Avatar
-            onClick={() => {
-              config = genConfig();
-            }}
-            className={Style.profile__image}
-            {...avatarConfig}
-          />
-        )}
-        <p className={Style.greetUser}>
-          Good {greet && greet}, {name}
-        </p>
-        <p>Email: {email}</p>
-        <p>
-          photoUrl:{" "}
-          {data && data.photo === "" ? "There's no image" : data.photo}
-        </p>
-        <button onClick={signOut}>Signout</button>
-        <p>{firebase.auth().currentUser && firebase.auth().currentUser.uid}</p>
-        {/* onSubmit={handleSubmit} */}
-        <form>
-          <input
-            type="file"
-            ref={uploadedImage}
-            accept="image/*"
-            value={image}
-          />
-          <input type="submit" value="Upload" />
-          <svg viewBox="0 0 36 36" class="circular-chart">
-            <path
-              class="circle"
-              stroke-dasharray={`${uploadProgress}, 100`}
-              d="M18 2.0845
-      a 15.9155 15.9155 0 0 1 0 31.831
-      a 15.9155 15.9155 0 0 1 0 -31.831"
-            />
-            <text
-              x="50%"
-              y="50%"
-              text-anchor="middle"
-              fill="white"
-              font-size="5px"
-              font-family="Arial"
-              dy=".3em"
-            >
-              {parseInt(uploadProgress)}%
-            </text>
-          </svg>
-        </form>
-      </Container>
-    );
-  } else {
+  }
+
+  if (!currentUser) {
     return (
       <Container>
         <p>
-          Sorry, you have to <a href="/login">login</a> to see your profile.
+          Sorry, you have to <a href='/login'>login</a> to see your profile.
         </p>
       </Container>
     );
   }
+
+  return (
+    <Container className={Style.profileContainer}>
+      <Row className={Style.profileRow}>
+        <Col md={4} className={Style.avatarCol}>
+          <div className={Style.avatarContainer}>
+            {photoUrl ? (
+              <img
+                src={photoUrl}
+                alt={`${name}'s profile`}
+                style={{
+                  width: '150px',
+                  height: '150px',
+                  borderRadius: '50%',
+                }}
+              />
+            ) : (
+              <Avatar
+                style={{
+                  width: '150px',
+                  height: '150px',
+                }}
+                {...avatarConfig}
+              />
+            )}
+          </div>
+          <div>
+            <p className={Style.greetUser}>
+              Good {greet()},<br />
+              {name}
+            </p>
+            <p className={Style.emailText}>
+              Email: <span className={Style.email}>{email}</span>
+            </p>
+          </div>
+        </Col>
+
+        <Col md={8}>
+          <Form>
+            <Form.Group className={Style.form__group}>
+              <Button
+                className={Style.uploadButton}
+                onClick={() => uploadedImage.current.click()}
+              >
+                Upload
+              </Button>
+              <Form.File
+                onChange={handleFileChange}
+                ref={uploadedImage}
+                accept='image/*'
+                hidden
+              />
+            </Form.Group>
+            <div className={Style.progressContainer}>
+              <div
+                className={Style.progressBar}
+                style={{ width: `${uploadProgress}%` }}
+              />
+              <span className={Style.progressText}>
+                {parseInt(uploadProgress)}%
+              </span>
+            </div>
+          </Form>
+          <Button
+            onClick={signOut}
+            variant='signOut'
+            className={Style.signOutButton}
+          >
+            Sign Out
+          </Button>
+          <Button
+            onClick={deleteAccount}
+            variant='danger'
+            className={Style.deleteAccountButton}
+          >
+            Delete Account
+          </Button>
+        </Col>
+      </Row>
+      <ProfileNav onNavClick={handleNavClick} activeView={view} />
+      <Row>
+        <Col>
+          <Row className={Style.actionRow}>
+            {view === 'banned' && (
+              <span
+                role='img'
+                aria-label='Star'
+                onClick={() =>
+                  handleStarAction(
+                    Object.keys(selectedArtists).filter(
+                      (artistId) => selectedArtists[artistId]
+                    )
+                  )
+                }
+                style={{
+                  cursor: 'pointer',
+                  marginLeft: '16px',
+                  fontSize: '22px',
+                }}
+              >
+                ⭐️
+              </span>
+            )}
+            {view === 'favorites' && (
+              <span
+                role='img'
+                aria-label='Ban'
+                onClick={() =>
+                  handleXAction(
+                    Object.keys(selectedArtists).filter(
+                      (artistId) => selectedArtists[artistId]
+                    )
+                  )
+                }
+                style={{
+                  cursor: 'pointer',
+                  marginLeft: '16px',
+                  fontSize: '22px',
+                }}
+              >
+                🚫
+              </span>
+            )}
+            <span
+              role='img'
+              aria-label='Trash'
+              onClick={() =>
+                handleDeleteAction(
+                  Object.keys(selectedArtists).filter(
+                    (artistId) => selectedArtists[artistId]
+                  )
+                )
+              }
+              style={{
+                cursor: 'pointer',
+                marginLeft: '16px',
+                fontSize: '22px',
+              }}
+            >
+              🗑️
+            </span>
+          </Row>
+          <ListGroup>
+            {artistsList.map((artist) => (
+              <ListGroup.Item
+                key={artist.id}
+                className={Style.artistItem}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                }}
+              >
+                <input
+                  type='checkbox'
+                  checked={!!selectedArtists[artist.id]}
+                  onChange={() => handleCheckboxChange(artist.id)}
+                  id={`checkbox-${artist.id}`}
+                  style={{ cursor: 'pointer', display: 'none' }}
+                />
+                <span
+                  className={Style.customCheckbox}
+                  onClick={() => handleCheckboxChange(artist.id)}
+                  style={{
+                    cursor: 'pointer',
+                    background: selectedArtists[artist.id]
+                      ? '#32CD32'
+                      : 'white',
+                  }}
+                />
+                <span
+                  onClick={() => handleCheckboxChange(artist.id)}
+                  style={{
+                    cursor: 'pointer',
+                    color: selectedArtists[artist.id] ? '#FF6F61' : 'white',
+                  }}
+                >
+                  {artist.name}
+                </span>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Col>
+      </Row>
+    </Container>
+  );
 };
 
 export default Profile;
-// ahmad: i'll figure out a way to use the code below.
-
-/*
-
-    uploadTask.on(
-      firebase.storage.TaskEvent.STATE_CHANGED, // or 'state_changed'
-      (snapshot) => {
-        var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        console.log('Upload is ' + progress + '% done');
-        switch (snapshot.state) {
-          case firebase.storage.TaskState.PAUSED: // or 'paused'
-            console.log('Upload is paused');
-            break;
-          case firebase.storage.TaskState.RUNNING: // or 'running'
-            console.log('Upload is running');
-            break;
-        }
-      },
-      (error) => {
-        switch (error.code) {
-          case 'storage/unauthorized':
-            break;
-          case 'storage/canceled':
-            break;
-          case 'storage/unknown':
-            break;
-        }
-      },
-      () => {
-        // Upload completed successfully, now we can get the download URL
-        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-          console.log('line ~: 143  File available at', downloadURL);
-
-          users.child(user.uid).update({
-            photo: downloadURL,
-          });
-          imageRef
-            .getDownloadURL()
-            .then((url) => {
-              setPhotoUrl(downloadURL);
-              console.log('line ~: 151 - File available at', url);
-            })
-            .catch((error) => {
-              switch (error.code) {
-                case 'storage/object-not-found':
-                  break;
-                case 'storage/unauthorized':
-                  break;
-                case 'storage/canceled':
-                  break;
-                case 'storage/unknown':
-                  break;
-              }
-            });
-        });
-        // setUser(null);
-        obServer();
-      },
-    );
-
-
-    */
-
-// const handleSubmit = (e) => {
-//   e.preventDefault();
-//   let type = uploadedImage.current.files[0].type;
-//   let metadata = {
-//     contentType: type,
-//   };
-//   let uploadTask = storageRef
-//     .child('images/' + user.uid + '/profile')
-//     .put(uploadedImage.current.files[0], metadata);
-
-//   uploadTask.on(
-//     'state_changed',
-//     (snapshot) => {
-//       var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-//       setUploadProgress(progress);
-//       console.log(progress);
-//       switch (snapshot.state) {
-//         case firebase.storage.TaskState.PAUSED:
-//           console.log('Upload is paused');
-//           break;
-//         case firebase.storage.TaskState.RUNNING:
-//           console.log('Upload is running');
-//           break;
-//       }
-//     },
-//     (err) => {
-//       console.log('error: ', err);
-//     },
-//     (data) => {
-//       uploadTask.snapshot.ref.getDownloadURL().then((url) => {
-//         console.log(data);
-//         users.child(user.uid).update({
-//           photo: url,
-//         });
-//         setPhotoUrl(url);
-//       });
-//     },
-//   );
-// };
-
-// let imageRef = storageRef.child(`images/${user && user.uid}/profile.png`);
-// let defaultImageRef = storageRef.child(`images/defaultDark.svg`);
-/* Get Image from Storage */
-// const ImageGetter = () => {
-//   imageRef
-//     .getDownloadURL()
-//     .then((url) => {
-//       setPhotoUrl(url);
-//     })
-//     .catch((error) => {
-//       switch (error.code) {
-//         case 'storage/object-not-found':
-//           console.log('object-not-found');
-//           break;
-//         case 'storage/unauthorized':
-//           console.log('unauthorized');
-//           break;
-//         case 'storage/canceled':
-//           console.log('object-not-found');
-//           break;
-//         case 'storage/unknown':
-//           console.log('object-not-found');
-//           break;
-//       }
-//     });
-// };
-// Storage
-// const users = db.ref('users');
-
-// Get data from Realtime Database
-// const getDataFromDatabase = () => {
-//   console.log(users.child(user.uid)[email]);
-//   users
-//     .child(user.uid)
-//     .get()
-//     .then(function (snapshot) {
-//       if (snapshot.exists()) {
-//         setData(snapshot.val());
-//         setTimeout(() => {
-//           console.log('data', data);
-//         }, 3000);
-//         setPhotoUrl(snapshot.val().photo);
-//       } else {
-//         console.log('No data available');
-//       }
-//     })
-//     .catch(function (error) {
-//       console.error(error);
-//     });
-// };
-
-// let username = data.username,
-//   photo = data.photo,
-//   email = data.email;
-// const obServer = () => {
-//   const authObserver = firebase.auth().onAuthStateChanged((user) => {
-//     if (user) {
-//       setUser(user);
-//       setStatus('approved');
-//     } else {
-//       setUser(user);
-//       setStatus('rejected');
-//     }
-//     console.log(`user:`, user);
-//   });
-//   user && user.uid && getDataFromDatabase();
-//   return authObserver;
-// };
-// useEffect(() => {
-//   setTimeout(() => {
-//     obServer();
-//   }, 1500);
-// }, [user]);
-
-// eslint-disable-next-line react-hooks/rules-of-hooks

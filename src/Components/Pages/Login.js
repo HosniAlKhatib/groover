@@ -1,15 +1,9 @@
-/* eslint-disable no-lone-blocks */
-/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import { Container } from 'react-bootstrap';
 import StyleFirebaseUI from 'react-firebaseui/StyledFirebaseAuth';
-import fire from '../../fire';
 import firebase from 'firebase';
-import { Redirect, useHistory } from 'react-router-dom';
 
 const db = firebase.database();
-
-const rootRef = db.ref('users');
 
 const configUi = {
   signInFlow: 'popup',

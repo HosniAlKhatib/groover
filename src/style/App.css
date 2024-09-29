@@ -92,25 +92,28 @@ video {
   top: 0;
   left: 0;
 }
-.fullscreen-bg {
-  position: fixed;
+.fullscreen_bg {
+  position: fixed; 
   top: 0;
   right: 0;
   bottom: 0;
   left: 0;
-  overflow: hidden;
-  z-index: -100;
-  background: transparent !important;
+  overflow: hidden; 
+  z-index: -1; 
+  background: transparent !important; 
 }
-.fullscreen-bg__video {
-  top: 2.5em;
-  height: 100%;
-  background: transparent !important;
-  width: 100%;
-  background-size: cover;
-  filter: blur(10px) brightness(0.3);
-  transform: scale(1);
+
+.fullscreen_bg__video {
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  height: 100vh; 
+  width: 100vw; 
+  border: none; 
+  transform: scale(1); 
+  pointer-events: none; 
 }
+
 .navbar-brand {
   font-weight: 700 !important;
   font-size: 25px;

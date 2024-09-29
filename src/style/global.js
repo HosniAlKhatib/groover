@@ -58,6 +58,10 @@ export const GlobalStyles = createGlobalStyle`
     margin-right: 20px;
     margin-left: 10px;
   }
+//   h1, h2, h3, p, h4, h5, h6, input::placeholder,
+// textarea::placeholder, ul, div {
+//     color: ${({ theme }) => theme.text} !important; 
+//   }
 
   ${
     '' /* .react-switch-bg > div:first-of-type {

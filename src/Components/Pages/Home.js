@@ -1,67 +1,80 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
-import Container from "react-bootstrap/Container";
-import Col from "react-bootstrap/Col";
-import Row from "react-bootstrap/Row";
-import Style from "../../style/home.module.css";
+import React, { useState, useEffect } from 'react';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
+import Style from '../../style/home.module.css';
+import useSpotifyToken from '../useSpotifyToken';
+
 const Home = () => {
-  const allMoods = [
-    {
-      moods: ["Hyped"],
-      artist: ["Travis Scott", "Shabjdeed", "Lil Uzi Vert", "Kanye West"],
-    },
-    {
-      moods: ["Sad", "Depressed"],
-      artist: ["XXXTentacion", "Frank Ocean", "NF", "Joji", "Mac DeMarco"],
-    },
-    {
-      moods: ["Calm"],
-      artist: [
-        "Post Malone",
-        "Bad Bunny",
-        "Don Toliver",
-        "TV Girl",
-        "The Weeknd",
-      ],
-    },
-    {
-      moods: ["Romantic"],
-      artist: ["Lil Tjay", "Frank Ocean", "Ariana Grande", "YNW Melly"],
-    },
-    {
-      moods: ["Loney"],
-      artist: ["NF", "XXXTentaction", "Juice WRLD", "Joji"],
-    },
-    {
-      moods: ["Fearful"],
-      artist: [
-        "Lucii",
-        "Central Cee",
-        "J. Cole",
-        "Kanye West",
-        "Kendrick Lamar",
-      ],
-    },
-  ];
+  const [type, setType] = useState();
+  const [final, setFinal] = useState([]);
 
-  const [mood, setMood] = useState({});
+  const { token } = useSpotifyToken();
 
-  const randomMood = () => {
-    const len = allMoods.length;
-    setMood(Math.floor(Math.random() * len));
-    console.log(mood);
+  useEffect(() => {
+    if (token) {
+      console.log('Access Token:', token);
+    }
+  }, [token]);
+
+  const randomGenre = async () => {
+    try {
+      const res1 = await fetch(
+        'https://api.spotify.com/v1/recommendations/available-genre-seeds',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data1 = await res1.json();
+      const len = data1.genres.length;
+      const rGenre = data1.genres[Math.floor(Math.random() * len)];
+      setType(rGenre);
+      setFinal([]);
+      const res = await fetch(
+        `https://api.spotify.com/v1/search?q=genre:"${rGenre}"&type=artist&limit=50&access_token=${token}`
+      );
+      const data = await res.json();
+      console.log('Data:', data.artists.items);
+      if (data.artists.items.length === 0) {
+        console.log('No Artists Found For This Genre.');
+        randomGenre();
+      }
+      if (data.artists && data.artists.items) {
+        data.artists.items.sort((a, b) => b.popularity - a.popularity);
+        let newFinal = [];
+        for (const item of data.artists.items) {
+          if (newFinal.length >= 7) {
+            break;
+          }
+          for (let i = 0; i < item.genres.length; i++) {
+            if (!newFinal.includes(item)) {
+              newFinal.push(item);
+            }
+            if (newFinal.length >= 7) {
+              break;
+            }
+          }
+        }
+        setFinal(newFinal);
+        console.log(newFinal);
+      }
+    } catch (error) {
+      console.error('Error fetching artist data:', error);
+    }
   };
 
   useEffect(() => {
-    randomMood();
-  }, []);
+    randomGenre();
+  }, [token]);
 
   return (
     <div className={Style.home__header}>
       {/* <h1>Home</h1> */}
       <Container>
         <Row>
-          <Col md={8} sm={12}>
+          <Col md={7} sm={12}>
             <h1 className={Style.title}>
               Welcome to <span className={Style.title__name}>Groover</span>
             </h1>
@@ -69,37 +82,20 @@ const Home = () => {
               We provide you with data about your favorite artist.
             </p>
           </Col>
-          <Col md={4} sm={12} className="part2">
+          <Col md={5} sm={12} className='part2'>
             <div className={Style.card}>
-              <h1 className={Style.title}>
-                Feeling{" "}
-                {allMoods[mood] &&
-                  allMoods[mood].moods.map((rnmood) => (
-                    <span>
-                      {rnmood}
-                      {""}
-                      {allMoods[mood].moods.length ===
-                      allMoods[mood].moods.indexOf(rnmood) + 1
-                        ? null
-                        : ", "}
-                    </span>
-                  ))}{" "}
-                ?
-              </h1>
+              <h1 className={Style.title}>Cool artists in the {type} genre</h1>
               <div className={Style.artist}>
                 Go and listen to:
                 <div className={Style.allArtist}>
-                  {allMoods[mood] &&
-                    allMoods[mood].artist.map((rnmood) => (
-                      <ul>
-                        <li>- {rnmood}</li>
-                      </ul>
-                    ))}
+                  <ul>
+                    {final && final.map((Rartist) => <li>- {Rartist.name}</li>)}
+                  </ul>
                 </div>
               </div>
               <div className={Style.changeMood}>
-                <button className={Style.changeMoodBtn} onClick={randomMood}>
-                  into another mood?
+                <button className={Style.changeMoodBtn} onClick={randomGenre}>
+                  into another genre?
                 </button>
               </div>
             </div>

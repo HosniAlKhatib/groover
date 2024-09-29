@@ -8,6 +8,7 @@ import Login from './Authentication/LogIn';
 import Profile from './Pages/Profile';
 import Home from './Pages/Home';
 import Search from './Pages/Search';
+// import HandleRedirect from './HandleRedirect';
 
 // Authentication
 import Signup from './Authentication/Signup';
@@ -15,6 +16,7 @@ import Signup from './Authentication/Signup';
 const Routes = () => {
   return (
     <Switch>
+      {/* <Route path='/callback' component={HandleRedirect} /> */}
       <Route path='/' exact>
         <Home />
       </Route>
