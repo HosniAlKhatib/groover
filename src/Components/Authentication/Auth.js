@@ -124,10 +124,10 @@ export function AuthProvider({ children }) {
       } else if (!existingUser && isOnSignUpPage) {
         await createUser(user);
       }
+      window.location.replace('/');
     } catch (err) {
       alert('An error occurred: ' + err.message);
     }
-    window.location.replace('/');
   }
 
   async function authenticateUser(

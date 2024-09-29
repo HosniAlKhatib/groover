@@ -122,17 +122,13 @@ const Search = () => {
       <div className={Style.search__div}>
         <h1 className={Style.search__title}>Search</h1>
         <form onSubmit={handleSubmit} className={Style.search__form}>
-          <Row>
-            <Col md={9} sm={12}>
-              <input
-                placeholder={'Search for Tracks'}
-                className={Style.search__btn}
-                value={query}
-                onChange={handleValueChange}
-                id='search_bar'
-              />
-            </Col>
-          </Row>
+          <input
+            placeholder={'Search for Tracks'}
+            className={Style.search__btn}
+            value={query}
+            onChange={handleValueChange}
+            id='search_bar'
+          />
         </form>
 
         {loading ? (

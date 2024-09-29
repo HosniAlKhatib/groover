@@ -18,7 +18,6 @@ const Grinder = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playingTrack, setPlayingTrack] = useState(null);
   const audioRef = useRef(null);
-
   const { token } = useSpotifyToken();
   const childRefs = useMemo(
     () =>
@@ -36,14 +35,11 @@ const Grinder = () => {
           .database()
           .ref(`users/${user.uid}/banned`);
         bannedArtistsRef.on('value', (snapshot) => {
-          const bannedList = snapshot.val()
-            ? Object.values(snapshot.val())
-            : [];
+          const bannedList = snapshot.val() ? Object.keys(snapshot.val()) : [];
           setBannedArtists(bannedList);
         });
       }
     };
-
     fetchBannedArtists();
   }, []);
 
@@ -54,18 +50,6 @@ const Grinder = () => {
         setIsSignedIn(!!user);
       });
     return () => unregisterAuthObserver();
-  }, []);
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      stopPlayback();
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      stopPlayback();
-    };
   }, []);
 
   const fetchArtists = async (term) => {
@@ -86,25 +70,11 @@ const Grinder = () => {
       if (data.artists && data.artists.items.length > 0) {
         const matchedArtist = data.artists.items[0];
 
-        const topTrackRes = await fetch(
-          `https://api.spotify.com/v1/artists/${matchedArtist.id}/top-tracks?market=US`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const topTrackData = await topTrackRes.json();
-        const matchedArtistWithTrack = {
-          ...matchedArtist,
-          topTrack: topTrackData.tracks[0] || null,
-        };
-
         const additionalArtists = await Promise.all(
           data.artists.items
             .slice(1)
-            .sort((a, b) => b.popularity - a.popularity)
             .filter((artist) => !bannedArtists.includes(artist.id))
+            .sort((a, b) => b.popularity - a.popularity)
             .slice(0, 7)
             .map(async (artist) => {
               const popularTrackRes = await fetch(
@@ -121,7 +91,7 @@ const Grinder = () => {
             })
         );
 
-        setArtists([matchedArtistWithTrack, ...additionalArtists].reverse());
+        setArtists([matchedArtist, ...additionalArtists].reverse());
         setCurrentIndex(0);
       } else {
         setArtists([]);
@@ -147,20 +117,13 @@ const Grinder = () => {
 
   const manualSwipe = (dir) => {
     if (artists.length >= currentIndex && childRefs[currentIndex].current) {
-      stopPlayback();
       childRefs[artists.length - currentIndex - 1].current.swipe(dir);
       setCurrentIndex(currentIndex + 1);
     }
   };
 
   const swiped = (dir, artistId, name) => {
-    console.log(`${name} was swiped ${dir}`);
     setLastDirection(dir);
-
-    stopPlayback();
-
-    console.log('Current playing track after stopping:', playingTrack);
-
     const user = firebase.auth().currentUser;
     if (user) {
       if (dir === 'left') {
@@ -169,13 +132,25 @@ const Grinder = () => {
           .ref(`users/${user.uid}/banned`)
           .update({ [artistId]: name });
         setBannedArtists((prevBanned) => [...prevBanned, artistId]);
+        firebase
+          .database()
+          .ref(`users/${user.uid}/favorites`)
+          .child(artistId)
+          .remove();
       }
-
       if (dir === 'up') {
         firebase
           .database()
           .ref(`users/${user.uid}/favorites`)
-          .update({ [artistId]: name });
+          .child(artistId)
+          .once('value', (snapshot) => {
+            if (!snapshot.exists()) {
+              firebase
+                .database()
+                .ref(`users/${user.uid}/favorites`)
+                .update({ [artistId]: name });
+            }
+          });
       }
     }
   };
@@ -189,9 +164,8 @@ const Grinder = () => {
           backgroundPosition: 'center',
         }
       : {
-          background: 'purple',
+          background: 'gray',
         };
-
     return {
       ...backgroundStyle,
       borderRadius: '15px',
@@ -216,15 +190,12 @@ const Grinder = () => {
         stopPlayback();
       }
     }
-
     audioRef.current = new Audio(previewUrl);
     audioRef.current
       .play()
       .catch((error) => console.error('Error playing audio:', error));
-
     setPlayingTrack(audioRef.current);
     setIsPlaying(true);
-
     audioRef.current.onended = () => {
       audioRef.current = null;
       setIsPlaying(false);
@@ -304,9 +275,12 @@ const Grinder = () => {
                           title={
                             isPlaying &&
                             playingTrack &&
+                            artist.topTrack &&
                             artist.topTrack.preview_url === playingTrack.src
                               ? 'Pause'
-                              : `Play ${artist.topTrack.name} by ${artist.name}`
+                              : artist.topTrack
+                              ? `Play ${artist.topTrack.name} by ${artist.name}`
+                              : `Play track by ${artist.name}`
                           }
                           style={{
                             border: 'none',
@@ -350,7 +324,7 @@ const Grinder = () => {
                         Popularity: {artist.popularity}
                       </p>
                       <p className={`${Style.artist_genres}`}>
-                        Genres: {artist.genres.join(', ')}
+                        Genres: {(artist.genres || []).join(', ')}
                       </p>
                     </div>
                   </div>

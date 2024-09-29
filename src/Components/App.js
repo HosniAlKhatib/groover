@@ -47,14 +47,10 @@ function App({ initialTheme = 'dark' }) {
   const type = 'list';
   const nowPlaying = `https://www.youtube.com/embed/videoseries?${type}=${listId}&autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1`;
 
-  const [isSignedIn, setIsSignedIn] = useState(false);
-
   useEffect(() => {
     const unregisterAuthObserver = firebase
       .auth()
-      .onAuthStateChanged((user) => {
-        setIsSignedIn(!!user);
-      });
+      .onAuthStateChanged((user) => {});
     return () => unregisterAuthObserver();
   }, []);
 
