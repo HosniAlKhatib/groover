@@ -2,21 +2,16 @@ import React from 'react';
 import Switch from 'react-bootstrap/esm/Switch';
 import { Route } from 'react-router-dom';
 import Grinder from './Pages/Grinder';
-// import Login from './Pages/Login';
 import Login from './Authentication/LogIn';
 
 import Profile from './Pages/Profile';
 import Home from './Pages/Home';
 import Search from './Pages/Search';
-// import HandleRedirect from './HandleRedirect';
-
-// Authentication
 import Signup from './Authentication/Signup';
 
 const Routes = () => {
   return (
     <Switch>
-      {/* <Route path='/callback' component={HandleRedirect} /> */}
       <Route path='/' exact>
         <Home />
       </Route>

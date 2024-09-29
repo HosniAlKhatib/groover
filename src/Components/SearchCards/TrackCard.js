@@ -55,10 +55,7 @@ const TrackCard = (props) => {
               </span>
             ))}
           </li>
-          <li
-            className={Style.search__results__spotify__player}
-            // onClick={() => <MySpotifyComponent token={token} />}
-          >
+          <li className={Style.search__results__spotify__player}>
             <iframe
               src={`https://open.spotify.com/embed/${track.uri.split(':')[1]}/${
                 track.uri.split(':')[2]

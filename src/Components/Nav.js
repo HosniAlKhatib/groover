@@ -68,10 +68,7 @@ const NavBar = ({ theme, handleClick, click, toggleTheme }) => {
               </Link>
             </>
           )}
-          {/*               background: `${
-                theme === 'light' ? lightTheme.switchbtn : darkTheme.switchbtn
-              }`,
- */}
+
           <button
             style={{
               background: 'transparent',

@@ -5,7 +5,7 @@ export const lightTheme = {
   gradient: 'linear-gradient(#39598A, #79D7ED)',
   switchbtn: '#363537',
   nav: '#fffffe',
-  videoOverlay: 'rgba(255, 255, 255, 0.3)', // light overlay
+  videoOverlay: 'rgba(255, 255, 255, 0.3)',
   burger: '#363537',
 };
 
@@ -17,5 +17,5 @@ export const darkTheme = {
   switchbtn: '#E2E2E2',
   nav: '#16161a',
   burger: '#FAFAFA',
-  videoOverlay: 'rgba(0, 0, 0, 0.5)', // Dark overlay
+  videoOverlay: 'rgba(0, 0, 0, 0.5)',
 };

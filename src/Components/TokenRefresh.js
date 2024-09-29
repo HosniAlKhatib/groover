@@ -27,7 +27,6 @@ const refreshToken = () => {
         return response.json();
       })
       .then((data) => {
-        // Handle the refreshed access token
         const access_token = data.access_token;
         console.log('Refreshed Access Token:', access_token);
         resolve(access_token);
@@ -47,5 +46,4 @@ refreshToken()
     console.error('Error:', error);
   });
 
-// Call refreshToken initially
 export default refreshToken;

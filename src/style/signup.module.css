@@ -124,13 +124,12 @@
   height: 1px;
   background-color: currentColor;
 }
-/* Input fields styling */
 .form__input {
   width: 60%; 
   height: 50px; 
   border-radius: 8px;
-  border: 2px solid #7f5af0; /* Match the border color with the theme */
-  background-color: #2c2f33; /* Darker background for inputs */
+  border: 2px solid #7f5af0;
+  background-color: #2c2f33;
   color: #ffffff; 
   padding-left: 20px;
   font-size: 18px; 

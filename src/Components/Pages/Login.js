@@ -50,59 +50,6 @@ const users = db.ref('users');
 const Login = () => {
   const [isSignedIn, setIsSignedIn] = useState(false);
   useEffect(() => {
-    //#region trash
-
-    // const authObserver = firebase.auth().onAuthStateChanged((user) => {
-    //   setUser(user);
-    //   let data;
-
-    //   user &&
-    //     users
-    //       .child(user.uid)
-    //       .get()
-    //       .then(function (snapshot) {
-    //         if (snapshot.exists()) {
-    //           data = snapshot.val();
-    //           if (user !== null) {
-    //             console.log(user);
-    //             writeUserData(
-    //               snapshot.val().uid === ''
-    //                 ? user && user.uid
-    //                 : snapshot.val().uid,
-
-    //               snapshot.val().displayName === ''
-    //                 ? user.displayName
-    //                 : snapshot.val().displayName,
-    //               snapshot.val().email === ''
-    //                 ? user.email
-    //                 : snapshot.val().email,
-    //               snapshot.val().photoURL === ''
-    //                 ? user.photoURL
-    //                 : snapshot.val().photoURL,
-    //             );
-    //           }
-
-    //           console.log(data);
-    //         } else {
-    //           console.log('No data available');
-    //           console.log(snapshot.val());
-    //           console.log(user);
-    //           // writeUserData(
-    //           //   user.uid,
-    //           //   user.displayName,
-    //           //   user.email,
-    //           //   user.photoURL,
-    //           // );
-    //         }
-    //       })
-    //       .catch(function (error) {
-    //         console.error(error);
-    //       });
-    // });
-    // return authObserver;
-
-    //#endregion
-
     const unregisterAuthObserver = firebase
       .auth()
       .onAuthStateChanged((user) => {
@@ -123,29 +70,6 @@ const Login = () => {
               photo: firebase.auth().currentUser.photoURL,
             });
         });
-
-      // isSignedIn &&
-      //   users
-      //     .child(firebase.auth().currentUser.uid)
-      //     .get()
-      //     .then(function (snapshot) {
-      //       if (snapshot.exists()) {
-      //         if (user !== null) {
-      //           console.log(user);
-      //           writeUserData(
-      //             firebase.auth().currentUser.uid,
-      //             firebase.auth().currentUser.displayName,
-      //             firebase.auth().currentUser.email,
-      //             firebase.auth().currentUser.photoURL,
-      //           );
-      //         }
-      //       } else {
-      //         console.log('No data available');
-      //       }
-      //     })
-      //     .catch(function (error) {
-      //       console.error(error);
-      //     });
     }
     return () => unregisterAuthObserver();
   });

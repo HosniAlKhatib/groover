@@ -71,7 +71,6 @@ const Home = () => {
 
   return (
     <div className={Style.home__header}>
-      {/* <h1>Home</h1> */}
       <Container>
         <Row>
           <Col md={7} sm={12}>

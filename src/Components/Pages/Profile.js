@@ -157,7 +157,7 @@ const Profile = () => {
       updates[`/banned/${artistId}`] = null;
     });
     await db.ref(`users/${currentUser.uid}`).update(updates);
-    setSelectedArtists({}); // Reset selected artists
+    setSelectedArtists({});
     fetchArtists();
   };
 
@@ -170,7 +170,7 @@ const Profile = () => {
       updates[`/favorites/${artistId}`] = null;
     });
     await db.ref(`users/${currentUser.uid}`).update(updates);
-    setSelectedArtists({}); // Reset selected artists
+    setSelectedArtists({});
     fetchArtists();
   };
 
