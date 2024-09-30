@@ -264,9 +264,12 @@ const Grinder = () => {
                   >
                     <div className={`${Style.card_content}`}>
                       <div className={`${Style.artist_footer}`}>
-                        <h5 className={`${Style.artist_name}`}>
+                        <div
+                          className={`${Style.artist_name}`}
+                          style={{ color: 'white' }}
+                        >
                           {artist.name}
-                        </h5>
+                        </div>
                         <button
                           onClick={() =>
                             playPreview(artist.topTrack.preview_url)

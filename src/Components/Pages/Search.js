@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Style from '../../style/search.module.css';
 // import Switch from 'react-switch'; previously used the switcher to toggle between artist and track search.
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
+// import Col from 'react-bootstrap/Col';
+// import Row from 'react-bootstrap/Row';
 import Container from 'react-bootstrap/Container';
 // Import ArtistCard from '../SearchCards/ArtistCard'; previously required to be used, I will keep it as a reference. Not needed since I developed Grinder.
 import TrackCard from '../SearchCards/TrackCard';

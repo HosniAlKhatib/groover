@@ -75,7 +75,8 @@ const Home = () => {
         <Row>
           <Col md={7} sm={12}>
             <h1 className={Style.title}>
-              Welcome to <span className={Style.title__name}>Groover</span>
+              <span className={Style.title__text}>Welcome to </span>
+              <span className={Style.title__name}>Groover</span>
             </h1>
             <p className={Style.header__brief}>
               We provide you with data about your favorite artist.
@@ -83,7 +84,10 @@ const Home = () => {
           </Col>
           <Col md={5} sm={12} className='part2'>
             <div className={Style.card}>
-              <h1 className={Style.title}>Cool artists in the {type} genre</h1>
+              <h1 className={Style.title}>
+                <span className={Style.title__text}>Cool artists in the </span>
+                <span className={Style.title__type}>{type} genre</span>
+              </h1>
               <div className={Style.artist}>
                 Go and listen to:
                 <div className={Style.allArtist}>

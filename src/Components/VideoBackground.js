@@ -10,7 +10,7 @@ const VideoBackground = ({ video }) => {
         className='fullscreen_bg__video'
         src={video}
         style={{
-          filter: `brightness(${theme.body === '#16161a' ? '10%' : ''})`,
+          filter: `brightness(${theme.body === '#16161a' ? '15%' : ''})`,
         }}
         allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
         allowFullScreen

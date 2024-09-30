@@ -4,3 +4,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.artists__names{
+    color: #bebbc3 !important;
+}
