@@ -92,3 +92,64 @@
 .allArtist li {
   list-style: none;
 }
+
+.genreDropdownBtn {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 5px;
+  color: white;
+}
+
+.dropdown {
+  position: absolute;
+  background: #2c2f33;
+  border: 1px solid #ccc;
+  width: 200px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color:#44484c;
+  border-radius: 4px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.searchInput:focus,
+.searchInput:hover {
+  border-color: #66cc75;
+  box-shadow: 0 0 5px rgba(109, 207, 246, 0.5);
+}
+
+.customGenreInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  background-color: #44484c;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.customGenreInput:focus,
+.customGenreInput:hover {
+  border-color: #ff6f61;
+  box-shadow: 0 0 5px rgba(255, 111, 97, 0.5);
+}
+
+
+.genreList li {
+  padding: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  color: white;
+}
+
+.genreList li:hover {
+  background-color: #222d36;
+}

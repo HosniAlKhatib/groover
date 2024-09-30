@@ -7,6 +7,7 @@ export const lightTheme = {
   nav: '#fffffe',
   videoOverlay: 'rgba(255, 255, 255, 0.3)',
   burger: '#363537',
+  icon: '#7f5af0',
 };
 
 export const darkTheme = {
@@ -18,4 +19,5 @@ export const darkTheme = {
   nav: '#16161a',
   burger: '#FAFAFA',
   videoOverlay: 'rgba(0, 0, 0, 0.5)',
+  icon: '#9b6ef4',
 };
