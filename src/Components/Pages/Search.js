@@ -52,12 +52,6 @@ const Search = () => {
   }, []);
 
   useEffect(() => {
-    if (token) {
-      console.log('Access Token:', token);
-    }
-  }, [token]);
-
-  useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -77,13 +71,9 @@ const Search = () => {
   const getDataTrack = async () => {
     const queryParam = encodeURIComponent(query);
     const res = await fetch(
-      `https://api.spotify.com/v1/search?q=${encodeURIComponent(
-        queryParam
-      )}&type=track&access_token=${token}`
+      `https://api.spotify.com/v1/search?q=${queryParam}&type=track&access_token=${token}`
     );
     const data = await res.json();
-
-    console.log('Data,', data);
 
     if (data.tracks && data.tracks.items) {
       const filteredTracks = data.tracks.items.filter(

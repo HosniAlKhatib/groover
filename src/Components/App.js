@@ -45,7 +45,7 @@ function App({ initialTheme = 'dark' }) {
   };
   const listId = 'PLtGjfoSQ7TDRx9StmbksF74Vl4DT9mOUd';
   const type = 'list';
-  const nowPlaying = `https://www.youtube.com/embed/videoseries?${type}=${listId}&autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1`;
+  const nowPlaying = `https://www.youtube.com/embed/videoseries?${type}=${listId}&autoplay=1&mute=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&loop=1&cc_load_policy=0`;
 
   useEffect(() => {
     const unregisterAuthObserver = firebase

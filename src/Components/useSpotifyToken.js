@@ -11,7 +11,7 @@ const useSpotifyToken = () => {
         refreshToken(refresh_token)
           .then((accessToken) => {
             setToken(accessToken);
-            console.log('Access Token refreshed:', accessToken);
+            // console.log('Access Token refreshed:', accessToken);
           })
           .catch((error) => {
             console.error('Error refreshing token:', error);

@@ -47,10 +47,7 @@ const TrackCard = (props) => {
             className={`${Style.search__results__name} ${Track_Style.search__results__elements} ${Track_Style.artists__names}`}
           >
             {track.artists.map((elem, index) => (
-              <React.Fragment
-                key={index}
-                className={`${Track_Style.artists__names}`}
-              >
+              <React.Fragment key={index}>
                 {elem.name}
                 {track.artists.length === track.artists.indexOf(elem) + 1
                   ? null
