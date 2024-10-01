@@ -13,6 +13,7 @@ const Grinder = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [bannedArtists, setBannedArtists] = useState([]);
   const [lastDirection, setLastDirection] = useState();
+  const [lastArtist, setLastArtist] = useState();
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -49,7 +50,10 @@ const Grinder = () => {
       .onAuthStateChanged((user) => {
         setIsSignedIn(!!user);
       });
-    return () => unregisterAuthObserver();
+    return () => {
+      stopPlayback();
+      unregisterAuthObserver();
+    };
   }, []);
 
   const fetchArtists = async (term) => {
@@ -78,7 +82,7 @@ const Grinder = () => {
             .slice(0, 7)
             .map(async (artist) => {
               const popularTrackRes = await fetch(
-                `https://api.spotify.com/v1/artists/${artist.id}/top-tracks?market=US`,
+                `https://api.spotify.com/v1/artists/${artist.id}/top-tracks`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -109,6 +113,7 @@ const Grinder = () => {
   };
 
   const handleSearch = (e) => {
+    stopPlayback();
     e.preventDefault();
     if (query) {
       fetchArtists(query);
@@ -123,7 +128,9 @@ const Grinder = () => {
   };
 
   const swiped = (dir, artistId, name) => {
+    stopPlayback();
     setLastDirection(dir);
+    setLastArtist(name);
     const user = firebase.auth().currentUser;
     if (user) {
       if (dir === 'left') {
@@ -152,6 +159,33 @@ const Grinder = () => {
             }
           });
       }
+    }
+  };
+  const handlePlayPreview = async (artist) => {
+    if (!artist.topTrack) {
+      try {
+        const topTrackRes = await fetch(
+          `https://api.spotify.com/v1/artists/${artist.id}/top-tracks?market=US`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const topTrackData = await topTrackRes.json();
+        const topTrack = topTrackData.tracks[0] || null;
+
+        artist.topTrack = topTrack;
+      } catch (error) {
+        console.error('Error fetching top track:', error);
+        return;
+      }
+    }
+
+    if (artist.topTrack && artist.topTrack.preview_url) {
+      playPreview(artist.topTrack.preview_url);
+    } else {
+      console.error('No preview available for this track.');
     }
   };
 
@@ -271,9 +305,7 @@ const Grinder = () => {
                           {artist.name}
                         </div>
                         <button
-                          onClick={() =>
-                            playPreview(artist.topTrack.preview_url)
-                          }
+                          onClick={() => handlePlayPreview(artist)}
                           className={Style.previewButton}
                           title={
                             isPlaying &&
@@ -354,9 +386,9 @@ const Grinder = () => {
                 Swipe Right!
               </button>
             </div>
-            {lastDirection ? (
+            {lastDirection && lastArtist ? (
               <h2 key={lastDirection} className='infoText'>
-                Swiped {lastDirection}
+                Swiped {lastArtist} {lastDirection}
               </h2>
             ) : (
               <h2 className='infoText'>Start Swipin'!</h2>
