@@ -47,29 +47,33 @@ export function AuthProvider({ children }) {
   };
   async function checkUser(email) {
     try {
-      const usersRef = db.ref('users');
-      const snapshot = await usersRef
+      const emailLower = email.toLowerCase();
+      const snapshot = await db
+        .ref('users')
         .orderByChild('email')
-        .equalTo(email)
+        .equalTo(emailLower)
         .once('value');
+
+      console.log('User check for:', emailLower, snapshot.exists());
+
       if (snapshot.exists()) {
         const users = snapshot.val();
         const userId = Object.keys(users)[0];
         return { userId, ...users[userId] };
-      } else {
-        return null;
       }
+      return null;
     } catch (error) {
-      console.error('Error checking database for user by email: ', error);
+      console.error('User check failed:', error);
       return null;
     }
   }
+
   async function createUser(user) {
     const userData = {
-      email: user.email,
+      email: user.email.toLowerCase(),
       name: user.displayName,
       profilePicture: user.photoURL,
-      provider: user.providerData[0].providerId,
+      provider: user.providerData[0].providerId.split('.')[0],
       userId: user.uid,
     };
 
@@ -88,48 +92,53 @@ export function AuthProvider({ children }) {
     try {
       const result = await auth.signInWithPopup(provider);
       const user = result.user;
-      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const existingUser = await checkUser(user.email);
-      if (isOnSignUpPage && existingUser) {
-        alert('You already have an account. Please log in instead.');
-        window.location.replace('/login');
-        return;
-      } else if (existingUser && !isOnSignUpPage) {
-        const existingProvider = existingUser.provider;
-        if (existingProvider !== provider.providerId) {
-          alert(
-            `This email is associated with a ${existingProvider} account. Please sign in with ${existingProvider}.`
-          );
-          await user.delete();
-          return false;
-        } else {
-          const updatedData = {
-            name: user.displayName || existingUser.name,
-            profilePicture: user.photoURL || existingUser.profilePicture,
-          };
-          await db.ref('users/' + existingUser.userId).update(updatedData);
-          console.log(
-            'Welcome back! Your profile has been updated:',
-            updatedData
-          );
+      const providerBase = provider.providerId.split('.')[0];
+
+      // 1. Handle existing users
+      if (existingUser) {
+        if (isOnSignUpPage) {
+          alert('You already have an account. Please log in instead.');
+          window.location.replace('/login');
+          return;
         }
-      } else if (!existingUser && !isOnSignUpPage) {
-        alert(
-          "You don't have an account. Please create a new account in the sign up page."
-        );
-        await user.delete();
-        window.location.replace('/signup');
-        return;
-      } else if (!existingUser && isOnSignUpPage) {
+
+        // Normalize both providers for comparison
+        const existingProviderBase = existingUser.provider.split('.')[0];
+        if (existingProviderBase !== providerBase) {
+          alert(
+            `This email is associated with a ${existingProviderBase} account.`
+          );
+          await auth.signOut();
+          return;
+        }
+
+        // Update profile if needed
+        const updatedData = {
+          name: user.displayName || existingUser.name,
+          profilePicture: user.photoURL || existingUser.profilePicture,
+        };
+        await db.ref('users/' + existingUser.userId).update(updatedData);
+      }
+      // 2. Handle new users
+      else {
+        if (!isOnSignUpPage) {
+          alert('Account not found. Please sign up first.');
+          await auth.signOut();
+          window.location.replace('/signup');
+          return;
+        }
         await createUser(user);
       }
+
       window.location.replace('/');
     } catch (err) {
       if (err.code === 'auth/too-many-requests') {
         alert('Too many attempts. Please try again later.');
       } else {
-        alert('An error occurred: ' + err.message);
+        console.error('Authentication error:', err);
+        alert(`Error: ${err.message}`);
       }
     }
   }
@@ -164,7 +173,7 @@ export function AuthProvider({ children }) {
   async function signUp(data, password) {
     if (validateSignUpData(data, password)) {
       try {
-        const existingUser = await checkUser(data.email);
+        const existingUser = await checkUser(data.email.toLowerCase());
 
         if (existingUser) {
           alert(
