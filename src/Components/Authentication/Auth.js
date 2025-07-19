@@ -96,7 +96,6 @@ export function AuthProvider({ children }) {
       const existingUser = await checkUser(user.email);
       const providerBase = provider.providerId.split('.')[0];
 
-      // 1. Handle existing users
       if (existingUser) {
         if (isOnSignUpPage) {
           alert('You already have an account. Please log in instead.');
@@ -104,7 +103,6 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        // Normalize both providers for comparison
         const existingProviderBase = existingUser.provider.split('.')[0];
         if (existingProviderBase !== providerBase) {
           alert(
@@ -114,15 +112,12 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        // Update profile if needed
         const updatedData = {
           name: user.displayName || existingUser.name,
           profilePicture: user.photoURL || existingUser.profilePicture,
         };
         await db.ref('users/' + existingUser.userId).update(updatedData);
-      }
-      // 2. Handle new users
-      else {
+      } else {
         if (!isOnSignUpPage) {
           alert('Account not found. Please sign up first.');
           await auth.signOut();
