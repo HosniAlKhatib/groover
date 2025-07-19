@@ -1,0 +1,42 @@
+{
+    "users": {
+      "USER_UID_HERE": {
+        "basic": {
+          "username": "example_user",
+          "email": "user@example.com",
+          "profilePic": "",
+          "isBanned": false
+        },
+        "preferences": {
+          "favoriteGenres": {
+            "rock": true,
+            "pop": true
+          },
+          "favoriteArtists": {
+            "artist_spotify:4gzpq5DPGxSnKTe4SA8HAU": "Coldplay"
+          },
+          "bannedArtists": {
+            "artist_spotify:1uNFoZAHBGtllmzznpCI3s": "Justin Bieber"
+          }
+        },
+        "activity": {
+          "recentlyPlayed": {
+            "-Nt12345678": {
+              "id": "track_spotify:7xGfFoTpQ2E7fRF5lN10tr",
+              "type": "track",
+              "timestamp": 1678900000000
+            }
+          }
+        },
+        "playlists": {
+          "-Nt87654321": {
+            "name": "Chill Vibes",
+            "createdAt": 1677000000000,
+            "tracks": {
+              "track_spotify:0c6xIDDpzE81m2q797ordA": true
+            }
+          }
+        }
+      }
+    }
+  }

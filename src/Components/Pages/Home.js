@@ -15,56 +15,130 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showCustomGenreInput, setShowCustomGenreInput] = useState(false);
   const [userGenre, setUserGenre] = useState('');
+  const [loadingGenres, setLoadingGenres] = useState(false);
+  const [loadingArtists, setLoadingArtists] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentlyPlaying, setCurrentlyPlaying] = useState(null);
+  const [audioElement, setAudioElement] = useState(null);
 
   const { token } = useSpotifyToken();
   const theme = useTheme();
 
   useEffect(() => {
     if (token) {
-      console.log('Access Token:', token);
       fetchGenres();
     }
   }, [token]);
 
   const fetchGenres = async () => {
+    setLoadingGenres(true);
+    setError(null);
     try {
-      const res = await fetch(
-        'https://api.spotify.com/v1/recommendations/available-genre-seeds',
+      const response = await fetch(
+        'https://api.spotify.com/v1/browse/categories?limit=50',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Spotify API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data.categories || !Array.isArray(data.categories.items)) {
+        throw new Error('Invalid categories data received');
+      }
+
+      const genreList = data.categories.items.map((category) => category.name);
+      setGenres(genreList);
+
+      if (genreList.length > 0) {
+        const randomGenre =
+          genreList[Math.floor(Math.random() * genreList.length)];
+        setType(randomGenre);
+        await fetchArtists(randomGenre);
+      }
+    } catch (err) {
+      console.error('Genre fetch error:', err);
+      setError(`Failed to load genres: ${err.message}`);
+    } finally {
+      setLoadingGenres(false);
+    }
+  };
+
+  const fetchArtists = async (selectedCategory) => {
+    if (!selectedCategory) return;
+
+    setLoadingArtists(true);
+    setError(null);
+    try {
+      // First get category ID
+      const categoryResponse = await fetch(
+        `https://api.spotify.com/v1/browse/categories?limit=50`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      const data = await res.json();
-      setGenres(data.genres);
-      if (data.genres.length > 0) {
-        const randomGenre =
-          data.genres[Math.floor(Math.random() * data.genres.length)];
-        setType(randomGenre);
-        fetchArtists(randomGenre);
-      }
-    } catch (error) {
-      console.error('Error fetching genres:', error);
-    }
-  };
 
-  const fetchArtists = async (selectedGenre) => {
-    try {
-      const res = await fetch(
-        `https://api.spotify.com/v1/search?q=genre:"${selectedGenre}"&type=artist&limit=50&access_token=${token}`
+      const categoryData = await categoryResponse.json();
+      const category = categoryData.categories.items.find(
+        (c) => c.name === selectedCategory
       );
-      const data = await res.json();
-      if (data.artists && data.artists.items.length > 0) {
-        const sortedArtists = data.artists.items.sort(
-          (a, b) => b.popularity - a.popularity
-        );
-        setFinal(sortedArtists.slice(0, 7));
-      } else {
-        console.log('No artists found for this genre.');
+
+      if (!category) {
+        throw new Error('Category not found');
       }
-    } catch (error) {
-      console.error('Error fetching artist data:', error);
+
+      // Then get playlists for that category
+      const playlistsResponse = await fetch(
+        `https://api.spotify.com/v1/browse/categories/${category.id}/playlists?limit=1`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const playlistsData = await playlistsResponse.json();
+
+      // Then get tracks from the first playlist
+      if (playlistsData.playlists.items.length > 0) {
+        const tracksResponse = await fetch(
+          `https://api.spotify.com/v1/playlists/${playlistsData.playlists.items[0].id}/tracks`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const tracksData = await tracksResponse.json();
+
+        // Extract artists
+        const artists = tracksData.items
+          .map((item) => item.track.artists[0])
+          .filter(
+            (artist, index, self) =>
+              index === self.findIndex((a) => a.id === artist.id)
+          );
+
+        setFinal(artists.slice(0, 7));
+      } else {
+        setFinal([]);
+      }
+    } catch (err) {
+      console.error('Artist fetch error:', err);
+      setError(`Failed to load artists: ${err.message}`);
+      setFinal([]);
+    } finally {
+      setLoadingArtists(false);
     }
   };
 
@@ -85,6 +159,52 @@ const Home = () => {
     genre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const previewArtist = async (artistId, artistName) => {
+    try {
+      if (audioElement) {
+        audioElement.pause();
+        setAudioElement(null);
+        setCurrentlyPlaying(null);
+      }
+
+      const response = await fetch(
+        `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.tracks && data.tracks.length > 0) {
+        const previewUrl = data.tracks[0].preview_url;
+        if (previewUrl) {
+          const audio = new Audio(previewUrl);
+          audio.play();
+          setAudioElement(audio);
+          setCurrentlyPlaying(artistId);
+
+          audio.onended = () => {
+            setCurrentlyPlaying(null);
+          };
+        } else {
+          console.log('No preview available for this track');
+        }
+      }
+    } catch (error) {
+      console.error('Error previewing artist:', error);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+      }
+    };
+  }, [audioElement]);
+
   return (
     <div className={Style.home__header}>
       <Container>
@@ -100,6 +220,11 @@ const Home = () => {
           </Col>
           <Col md={5} sm={12} className='part2'>
             <div className={Style.card}>
+              {error && (
+                <div className={Style.errorAlert}>
+                  {error} <button onClick={() => setError(null)}>×</button>
+                </div>
+              )}
               <h1 className={Style.title}>
                 <span className={Style.title__text}>Cool artists in the </span>
                 <span className={Style.title__type}>{type}</span>
@@ -172,8 +297,19 @@ const Home = () => {
                 <div className={Style.allArtist}>
                   <ul>
                     {final.length > 0 ? (
-                      final.map((Rartist) => (
-                        <li key={Rartist.id}>- {Rartist.name}</li>
+                      final.map((artist) => (
+                        <li
+                          key={artist.id}
+                          className={`${Style.artistName} ${
+                            currentlyPlaying === artist.id ? Style.playing : ''
+                          }`}
+                          onClick={() => previewArtist(artist.id, artist.name)}
+                          onMouseEnter={() =>
+                            previewArtist(artist.id, artist.name)
+                          }
+                        >
+                          {artist.name}
+                        </li>
                       ))
                     ) : (
                       <li>No Artists Found In This Genre</li>

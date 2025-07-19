@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { auth, googleProvider, gitHubProvider, db } from '../../fire';
+import { auth, googleProvider, githubProvider, db } from '../../fire';
 import app from '../../fire';
 
 const AuthContext = React.createContext();
@@ -76,9 +76,10 @@ export function AuthProvider({ children }) {
     try {
       await db.ref('users/' + user.uid).set(userData);
       console.log('User created successfully:', userData);
+      return userData;
     } catch (error) {
       console.error('Error creating user:', error);
-      throw new Error('Could not create user');
+      throw error;
     }
   }
   async function handleProviderSignIn(provider) {
@@ -87,6 +88,7 @@ export function AuthProvider({ children }) {
     try {
       const result = await auth.signInWithPopup(provider);
       const user = result.user;
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const existingUser = await checkUser(user.email);
       if (isOnSignUpPage && existingUser) {
@@ -95,7 +97,6 @@ export function AuthProvider({ children }) {
         return;
       } else if (existingUser && !isOnSignUpPage) {
         const existingProvider = existingUser.provider;
-
         if (existingProvider !== provider.providerId) {
           alert(
             `This email is associated with a ${existingProvider} account. Please sign in with ${existingProvider}.`
@@ -107,7 +108,6 @@ export function AuthProvider({ children }) {
             name: user.displayName || existingUser.name,
             profilePicture: user.photoURL || existingUser.profilePicture,
           };
-
           await db.ref('users/' + existingUser.userId).update(updatedData);
           console.log(
             'Welcome back! Your profile has been updated:',
@@ -126,7 +126,11 @@ export function AuthProvider({ children }) {
       }
       window.location.replace('/');
     } catch (err) {
-      alert('An error occurred: ' + err.message);
+      if (err.code === 'auth/too-many-requests') {
+        alert('Too many attempts. Please try again later.');
+      } else {
+        alert('An error occurred: ' + err.message);
+      }
     }
   }
 
@@ -188,7 +192,7 @@ export function AuthProvider({ children }) {
 
   const GitHub = async () => {
     try {
-      await handleProviderSignIn(gitHubProvider);
+      await handleProviderSignIn(githubProvider);
     } catch (error) {
       alert('Error during GitHub Sign-in: ' + error.message);
     }
@@ -202,67 +206,27 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setCurrentUser(user);
+
+      if (user) {
+        try {
+          const snapshot = await db.ref(`users/${user.uid}`).once('value');
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            setName(userData.name);
+            setEmail(userData.email);
+            setImage(userData.profilePicture || user.photoURL || null);
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+        }
+      }
       setLoading(false);
     });
 
     return unsubscribe;
   }, []);
-  if (currentUser) {
-    // Get data from db
-    users
-      .child(currentUser.uid)
-      .get()
-      .then(function(snapshot) {
-        if (snapshot.exists()) {
-          setName(snapshot.val().name);
-          setEmail(snapshot.val().email);
-        } else {
-          console.log(`user:`, currentUser);
-          console.log(`user id: ${currentUser.uid}`);
-          console.log(snapshot.val());
-          console.log('No data available');
-        }
-      })
-      .catch(function(error) {
-        console.error(error);
-      });
-
-    /* Get Image */
-    const imageRef = storageRef.child(`images/${currentUser.uid}/profile.png`);
-    imageRef
-      .getDownloadURL()
-      .then((url) => {
-        setImage(url);
-      })
-      .catch((error) => {
-        switch (error.code) {
-          case 'storage/object-not-found':
-            console.log('object-not-found');
-            console.log(`uid: ${currentUser.uid}`);
-            break;
-          case 'storage/unauthorized':
-            console.log('unauthorized');
-            console.log(`uid: ${currentUser.uid}`);
-
-            break;
-          case 'storage/canceled':
-            console.log('object-not-found');
-            console.log(`uid: ${currentUser.uid}`);
-
-            break;
-          case 'storage/unknown':
-            console.log('object-not-found');
-            console.log(`uid: ${currentUser.uid}`);
-
-            break;
-          default:
-            console.error('An unexpected error occurred:', error);
-            break;
-        }
-      });
-  }
 
   const value = {
     currentUser,
@@ -273,7 +237,7 @@ export function AuthProvider({ children }) {
     logOut,
     name,
     email,
-    image,
+    image: image || null,
   };
 
   return (

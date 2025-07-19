@@ -11,8 +11,10 @@ import ProfileNav from '../ProfileNav';
 
 const Profile = () => {
   const { currentUser, loading, name, email, logOut } = useAuth();
-  const [avatarConfig, setAvatarConfig] = useState(null);
-  const [photoUrl, setPhotoUrl] = useState('');
+  const [avatarConfig, setAvatarConfig] = useState(() => {
+    return genConfig();
+  });
+  const [displayImage, setDisplayImage] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const uploadedImage = useRef(null);
   const history = useHistory();
@@ -21,18 +23,82 @@ const Profile = () => {
   const [view, setView] = useState('favorites');
   const [selectedArtists, setSelectedArtists] = useState({});
 
-  const signOut = () => {
-    logOut();
-    history.push('/');
+  useEffect(() => {
+    if (name) {
+      const seed = name
+        .split('')
+        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      setAvatarConfig(genConfig({ seed }));
+    }
+  }, [name]);
+
+  useEffect(() => {
+    if (currentUser) {
+      const loadProfileImage = async () => {
+        try {
+          const snapshot = await db
+            .ref(`users/${currentUser.uid}`)
+            .once('value');
+          const userData = snapshot.val() || {};
+
+          const imageSources = [
+            userData.profilePicture,
+            currentUser.photoURL,
+          ].filter(Boolean);
+
+          for (const url of imageSources) {
+            if (await verifyImageExists(url)) {
+              setDisplayImage(url);
+              return;
+            }
+          }
+
+          // If no image found, use avatar
+          setDisplayImage(null);
+        } catch (error) {
+          console.error('Error loading profile image:', error);
+          setDisplayImage(null);
+        }
+      };
+
+      loadProfileImage();
+    }
+  }, [currentUser, db]);
+
+  const verifyImageExists = (url) => {
+    return new Promise((resolve) => {
+      if (!url) return resolve(false);
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+
+      setTimeout(() => resolve(false), 2000);
+    });
   };
 
   useEffect(() => {
-    const config = randomAvatar(name);
+    const config = genConfig();
     setAvatarConfig(config);
-  }, [name]);
 
-  const randomAvatar = () => {
-    return genConfig();
+    if (currentUser) {
+      const userRef = db.ref('users/' + currentUser.uid);
+      userRef.once('value', async (snapshot) => {
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          const imageSource = userData.profilePicture || currentUser.photoURL;
+
+          if (imageSource && (await verifyImageExists(imageSource))) {
+            setDisplayImage(imageSource);
+          }
+        }
+      });
+    }
+  }, [currentUser, db]);
+
+  const signOut = () => {
+    logOut();
+    history.push('/');
   };
 
   const greet = () => {
@@ -44,67 +110,54 @@ const Profile = () => {
     const file = event.target.files[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      setPhotoUrl(url);
+      setDisplayImage(url);
       handleSubmit(file);
     }
   };
 
-  const handleSubmit = (file) => {
-    if (!file) return;
+  const handleSubmit = async (file) => {
+    if (!file || !currentUser) return;
 
-    const metadata = { contentType: file.type };
-    const storageRef = firebase
-      .storage()
-      .ref()
-      .child(`images/${firebase.auth().currentUser.uid}/profile`);
+    try {
+      const metadata = { contentType: file.type };
+      const storageRef = firebase
+        .storage()
+        .ref(`images/${currentUser.uid}/profile-${Date.now()}`);
 
-    const uploadTask = storageRef.put(file, metadata);
+      const uploadTask = storageRef.put(file, metadata);
 
-    uploadTask.on(
-      'state_changed',
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-      },
-      (err) => {
-        console.error('Upload error: ', err);
-        setUploadProgress(0);
-      },
-      () => {
-        uploadTask.snapshot.ref.getDownloadURL().then((url) => {
-          console.log('File available at:', url);
-          db.ref('users/' + currentUser.uid)
-            .update({ profilePicture: url })
-            .then(() => {
-              console.log('Profile picture updated successfully!');
-            })
-            .catch((error) => {
-              console.error(
-                'Error updating profile picture URL in database:',
-                error
-              );
-            });
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error('Upload error:', error);
           setUploadProgress(0);
-        });
-      }
-    );
-  };
-
-  useEffect(() => {
-    if (currentUser) {
-      const userRef = db.ref('users/' + currentUser.uid);
-      userRef.once('value', (snapshot) => {
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
-          if (userData.profilePicture) {
-            setPhotoUrl(userData.profilePicture);
+          setDisplayImage(null);
+        },
+        async () => {
+          try {
+            const url = await uploadTask.snapshot.ref.getDownloadURL();
+            await db
+              .ref('users/' + currentUser.uid)
+              .update({ profilePicture: url });
+            setDisplayImage(url);
+          } catch (error) {
+            console.error('Error updating profile:', error);
+          } finally {
+            setUploadProgress(0);
           }
         }
-      });
+      );
+    } catch (error) {
+      console.error('Upload initialization error:', error);
     }
-  }, [currentUser, db]);
+  };
 
+  // Rest of your existing functions remain exactly the same:
   const getFavoriteArtists = async () => {
     const userRef = db.ref(`users/${currentUser.uid}/favorites`);
     const snapshot = await userRef.once('value');
@@ -244,22 +297,16 @@ const Profile = () => {
       <Row className={Style.profileRow}>
         <Col md={4} className={Style.avatarCol}>
           <div className={Style.avatarContainer}>
-            {photoUrl ? (
+            {displayImage ? (
               <img
-                src={photoUrl}
+                src={displayImage}
                 alt={`${name}'s profile`}
-                style={{
-                  width: '150px',
-                  height: '150px',
-                  borderRadius: '50%',
-                }}
+                className={Style.profileImage}
+                onError={() => setDisplayImage(null)}
               />
             ) : (
               <Avatar
-                style={{
-                  width: '150px',
-                  height: '150px',
-                }}
+                style={{ width: '150px', height: '150px' }}
                 {...avatarConfig}
               />
             )}
@@ -291,15 +338,17 @@ const Profile = () => {
                 hidden
               />
             </Form.Group>
-            <div className={Style.progressContainer}>
-              <div
-                className={Style.progressBar}
-                style={{ width: `${uploadProgress}%` }}
-              />
-              <span className={Style.progressText}>
-                {parseInt(uploadProgress)}%
-              </span>
-            </div>
+            {uploadProgress > 0 && (
+              <div className={Style.progressContainer}>
+                <div
+                  className={Style.progressBar}
+                  style={{ width: `${uploadProgress}%` }}
+                />
+                <span className={Style.progressText}>
+                  {parseInt(uploadProgress)}%
+                </span>
+              </div>
+            )}
           </Form>
           <Button
             onClick={signOut}
@@ -332,11 +381,7 @@ const Profile = () => {
                     )
                   )
                 }
-                style={{
-                  cursor: 'pointer',
-                  marginLeft: '16px',
-                  fontSize: '22px',
-                }}
+                className={Style.actionIcon}
               >
                 ⭐️
               </span>
@@ -352,11 +397,7 @@ const Profile = () => {
                     )
                   )
                 }
-                style={{
-                  cursor: 'pointer',
-                  marginLeft: '16px',
-                  fontSize: '22px',
-                }}
+                className={Style.actionIcon}
               >
                 🚫
               </span>
@@ -371,48 +412,30 @@ const Profile = () => {
                   )
                 )
               }
-              style={{
-                cursor: 'pointer',
-                marginLeft: '16px',
-                fontSize: '22px',
-              }}
+              className={Style.actionIcon}
             >
               🗑️
             </span>
           </Row>
           <ListGroup>
             {artistsList.map((artist) => (
-              <ListGroup.Item
-                key={artist.id}
-                className={Style.artistItem}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                }}
-              >
+              <ListGroup.Item key={artist.id} className={Style.artistItem}>
                 <input
                   type='checkbox'
                   checked={!!selectedArtists[artist.id]}
                   onChange={() => handleCheckboxChange(artist.id)}
                   id={`checkbox-${artist.id}`}
-                  style={{ cursor: 'pointer', display: 'none' }}
+                  className={Style.checkboxInput}
                 />
                 <span
-                  className={Style.customCheckbox}
+                  className={`${Style.customCheckbox} ${
+                    selectedArtists[artist.id] ? Style.checked : ''
+                  }`}
                   onClick={() => handleCheckboxChange(artist.id)}
-                  style={{
-                    cursor: 'pointer',
-                    background: selectedArtists[artist.id]
-                      ? '#32CD32'
-                      : 'white',
-                  }}
                 />
                 <span
                   onClick={() => handleCheckboxChange(artist.id)}
-                  style={{
-                    cursor: 'pointer',
-                    color: selectedArtists[artist.id] ? '#FF6F61' : 'white',
-                  }}
+                  className={Style.artistName}
                 >
                   {artist.name}
                 </span>

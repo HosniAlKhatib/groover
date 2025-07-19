@@ -8,6 +8,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Itim&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Rancho&display=swap');
 
+
+.errorAlert {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.errorAlert button {
+  background: none;
+  border: none;
+  color: #c62828;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
 .home__header {
   margin-top: 170px;
 }
@@ -152,4 +172,37 @@
 
 .genreList li:hover {
   background-color: #222d36;
+}
+.artistName {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  padding-left: 20px;
+}
+
+.artistName:hover {
+  color: #1DB954;
+  transform: translateX(5px);
+}
+
+.artistName::before {
+  content: '▶';
+  position: absolute;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.artistName:hover::before {
+  opacity: 1;
+}
+
+.artistName.playing {
+  color: #1DB954;
+  font-weight: bold;
+}
+
+.artistName.playing::before {
+  content: '⏸';
+  opacity: 1;
 }

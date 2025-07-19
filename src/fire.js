@@ -1,24 +1,25 @@
 import firebase from 'firebase/app';
 import 'firebase/auth';
-import 'firebase/database'; // Import database module
+import 'firebase/database';
+import 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDpPaaZcp4CYwRvORu_FdAAN0gKktT2G8c',
-  authDomain: 'groover-cfp.firebaseapp.com',
-  projectId: 'groover-cfp',
-  storageBucket: 'groover-cfp.appspot.com',
-  messagingSenderId: '23784461277',
-  appId: '1:23784461277:web:d1ef647add091dfd749c34',
-  measurementId: 'G-9NKEP4KD5B',
-  databaseURL: 'https://groover-cfp-default-rtdb.firebaseio.com/',
+  apiKey: 'AIzaSyCz8fk1UR_b05eF_7AxESy0kJKwz0zv7ts',
+  authDomain: 'groover-hmh.firebaseapp.com',
+  projectId: 'groover-hmh',
+  storageBucket: 'groover-hmh.firebasestorage.app',
+  messagingSenderId: '202885201348',
+  appId: '1:202885201348:web:87634cff9862e995ed7891',
+  measurementId: 'G-JMHQEKKS2T',
 };
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const auth = app.auth();
-const db = app.database(); // Access the Realtime Database instance
-const googleProvider = new firebase.auth.GoogleAuthProvider(); // Initialize Google Auth Provider
-const gitHubProvider = new firebase.auth.GithubAuthProvider(); // Initialize GitHub Auth Provider (use correct casing)
+firebase.initializeApp(firebaseConfig);
 
-export { auth, googleProvider, gitHubProvider, db };
-export default app;
+export const auth = firebase.auth();
+export const db = firebase.database();
+export const storage = firebase.storage();
+
+export const googleProvider = new firebase.auth.GoogleAuthProvider();
+export const githubProvider = new firebase.auth.GithubAuthProvider();
+
+export default firebase;

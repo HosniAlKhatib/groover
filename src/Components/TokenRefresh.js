@@ -28,7 +28,6 @@ const refreshToken = () => {
       })
       .then((data) => {
         const access_token = data.access_token;
-        // console.log('Refreshed Access Token:', access_token);
         resolve(access_token);
       })
       .catch((error) => {
@@ -39,9 +38,7 @@ const refreshToken = () => {
 };
 
 refreshToken()
-  .then((accessToken) => {
-    // console.log('Access Token:', accessToken);
-  })
+  .then((accessToken) => {})
   .catch((error) => {
     console.error('Error:', error);
   });
