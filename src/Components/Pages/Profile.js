@@ -33,36 +33,28 @@ const Profile = () => {
   }, [name]);
 
   useEffect(() => {
-    if (currentUser) {
-      const loadProfileImage = async () => {
-        try {
-          const snapshot = await db
-            .ref(`users/${currentUser.uid}`)
-            .once('value');
-          const userData = snapshot.val() || {};
+    if (!currentUser) return;
 
-          const imageSources = [
-            userData.profilePicture,
-            currentUser.photoURL,
-          ].filter(Boolean);
+    const loadProfileImage = async () => {
+      try {
+        const snapshot = await db
+          .ref(`users/${currentUser.uid}/profilePicture`)
+          .once('value');
 
-          for (const url of imageSources) {
-            if (await verifyImageExists(url)) {
-              setDisplayImage(url);
-              return;
-            }
-          }
+        const imageUrl = snapshot.val();
 
-          // If no image found, use avatar
-          setDisplayImage(null);
-        } catch (error) {
-          console.error('Error loading profile image:', error);
+        if (imageUrl) {
+          setDisplayImage(imageUrl);
+        } else {
           setDisplayImage(null);
         }
-      };
+      } catch (error) {
+        console.error('Error loading profile image:', error);
+        setDisplayImage(null);
+      }
+    };
 
-      loadProfileImage();
-    }
+    loadProfileImage();
   }, [currentUser, db]);
 
   const verifyImageExists = (url) => {
@@ -157,7 +149,6 @@ const Profile = () => {
     }
   };
 
-  // Rest of your existing functions remain exactly the same:
   const getFavoriteArtists = async () => {
     const userRef = db.ref(`users/${currentUser.uid}/favorites`);
     const snapshot = await userRef.once('value');
